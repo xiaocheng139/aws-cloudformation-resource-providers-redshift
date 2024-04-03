@@ -15,7 +15,6 @@ import software.amazon.awssdk.services.redshift.model.DescribeClustersResponse;
 import software.amazon.awssdk.services.redshift.model.DescribeLoggingStatusRequest;
 import software.amazon.awssdk.services.redshift.model.DescribeLoggingStatusResponse;
 import software.amazon.awssdk.services.redshift.model.EnableLoggingRequest;
-import software.amazon.awssdk.services.redshift.model.EnableLoggingResponse;
 import software.amazon.awssdk.services.redshift.model.GetResourcePolicyRequest;
 import software.amazon.awssdk.services.redshift.model.ModifyClusterMaintenanceRequest;
 import software.amazon.awssdk.services.redshift.model.PutResourcePolicyRequest;
@@ -78,9 +77,9 @@ public class CreateHandlerTest extends AbstractTestBase {
     @Test
     public void handleRequest_SimpleSuccess() {
         Tag tag = Tag.builder()
-                .key("foo")
-                .value("bar")
-                .build();
+            .key("foo")
+            .value("bar")
+            .build();
 
         List<Tag> tags = new LinkedList<>();
         tags.add(tag);
@@ -89,18 +88,18 @@ public class CreateHandlerTest extends AbstractTestBase {
         model.setTags(tags);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(model)
-                .region(AWS_REGION)
-                .logicalResourceIdentifier("logicalId")
-                .clientRequestToken("token")
-                .build();
+            .desiredResourceState(model)
+            .region(AWS_REGION)
+            .logicalResourceIdentifier("logicalId")
+            .clientRequestToken("token")
+            .build();
 
         when(proxyClient.client().createCluster(any(CreateClusterRequest.class))).thenReturn(createClusterResponseSdk());
 
         software.amazon.awssdk.services.redshift.model.Tag clusterTag = software.amazon.awssdk.services.redshift.model.Tag.builder()
-                .key("foo")
-                .value("bar")
-                .build();
+            .key("foo")
+            .value("bar")
+            .build();
 
         List<software.amazon.awssdk.services.redshift.model.Tag> clusterTags = new LinkedList<>();
         clusterTags.add(clusterTag);
@@ -109,12 +108,12 @@ public class CreateHandlerTest extends AbstractTestBase {
         clusterWithTags.toBuilder().tags(clusterTags).build();
 
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class)))
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(clusterWithTags)
-                        .build());
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(clusterWithTags)
+                .build());
 
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class)))
-                .thenReturn(DescribeLoggingStatusResponse.builder().loggingEnabled(false).build());
+            .thenReturn(DescribeLoggingStatusResponse.builder().loggingEnabled(false).build());
         when(proxyClient.client().getResourcePolicy(any(GetResourcePolicyRequest.class))).thenReturn(getEmptyResourcePolicyResponseSdk());
 
         ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -135,45 +134,80 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getErrorCode()).isNull();
         assertThat(response.getResourceModel().getClusterNamespaceArn()).isNotNull();
         assertThat(response.getResourceModel().getClusterIdentifier()).
-                isEqualTo(request.getDesiredResourceState().getClusterIdentifier());
+            isEqualTo(request.getDesiredResourceState().getClusterIdentifier());
 
         verify(proxyClient.client()).createCluster(any(CreateClusterRequest.class));
         verify(proxyClient.client(), times(3))
-                .describeClusters(any(DescribeClustersRequest.class));
+            .describeClusters(any(DescribeClustersRequest.class));
 
     }
 
     @Test
-    public void testCreateClusterAndEnableLogging() {
+    public void testCreateClusterAndEnableS3Logging() {
+        // Arrange
         ResourceModel model = createClusterRequestModel();
-        model.setLoggingProperties(LOGGING_PROPERTIES);
+        model.setLoggingProperties(LOGGING_PROPERTIES_S3);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(model)
-                .region(AWS_REGION)
-                .logicalResourceIdentifier("logicalId")
-                .clientRequestToken("token")
-                .build();
+            .desiredResourceState(model)
+            .region(AWS_REGION)
+            .logicalResourceIdentifier("logicalId")
+            .clientRequestToken("token")
+            .build();
 
         when(proxyClient.client().createCluster(any(CreateClusterRequest.class))).thenReturn(createClusterResponseSdk());
 
         when(proxyClient.client().enableLogging(any(EnableLoggingRequest.class)))
-                .thenReturn(EnableLoggingResponse.builder()
-                        .bucketName(BUCKET_NAME)
-                        .loggingEnabled(true)
-                        .lastSuccessfulDeliveryTime(Instant.now())
-                        .build());
+            .thenReturn(createS3EnableLoggingResponseSdk());
 
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class))).thenReturn(describeClustersResponseSdk());
 
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class)))
-                .thenReturn(DescribeLoggingStatusResponse.builder()
-                        .bucketName(BUCKET_NAME)
-                        .loggingEnabled(true)
-                        .lastSuccessfulDeliveryTime(Instant.now())
-                        .build());
+            .thenReturn(DescribeLoggingStatusResponse.builder()
+                .bucketName(BUCKET_NAME)
+                .loggingEnabled(true)
+                .lastSuccessfulDeliveryTime(Instant.now())
+                .build());
         when(proxyClient.client().getResourcePolicy(any(GetResourcePolicyRequest.class))).thenReturn(getEmptyResourcePolicyResponseSdk());
 
+        // Act, Assert
+        handleRequestAndVerifyEnableLogging(request);
+    }
+
+    @Test
+    public void testCreateClusterAndEnableCWLogging() {
+        // Arrange
+        ResourceModel model = createClusterRequestModel();
+        model.setLoggingProperties(LOGGING_PROPERTIES_CW);
+
+        final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
+            .desiredResourceState(model)
+            .region(AWS_REGION)
+            .logicalResourceIdentifier("logicalId")
+            .clientRequestToken("token")
+            .build();
+
+        when(proxyClient.client().createCluster(any(CreateClusterRequest.class))).thenReturn(createClusterResponseSdk());
+
+        when(proxyClient.client().enableLogging(any(EnableLoggingRequest.class)))
+            .thenReturn(createCWEnableLoggingResponseSdk());
+
+        when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class))).thenReturn(describeClustersResponseSdk());
+
+        when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class)))
+            .thenReturn(DescribeLoggingStatusResponse.builder()
+                .logDestinationType(LOG_DESTINATION_TYPE_CW)
+                .logExports(LOG_EXPORTS_TYPES)
+                .loggingEnabled(true)
+                .lastSuccessfulDeliveryTime(Instant.now())
+                .build());
+        when(proxyClient.client().getResourcePolicy(any(GetResourcePolicyRequest.class))).thenReturn(getEmptyResourcePolicyResponseSdk());
+
+        // Act, Assert
+        handleRequestAndVerifyEnableLogging(request);
+    }
+
+    private void handleRequestAndVerifyEnableLogging(ResourceHandlerRequest<ResourceModel> request) {
         ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
 
         assertThat(response).isNotNull();
@@ -189,13 +223,14 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
         assertThat(response.getResourceModel().getClusterNamespaceArn()).
-                isEqualTo(request.getDesiredResourceState().getClusterNamespaceArn());
+            isEqualTo(request.getDesiredResourceState().getClusterNamespaceArn());
         assertThat(response.getResourceModel().getClusterIdentifier()).
-                isEqualTo(request.getDesiredResourceState().getClusterIdentifier());
+            isEqualTo(request.getDesiredResourceState().getClusterIdentifier());
+        assertThat(response.getResourceModel().getLoggingProperties()).
+            isEqualTo(request.getDesiredResourceState().getLoggingProperties());
         verify(proxyClient.client()).createCluster(any(CreateClusterRequest.class));
         verify(proxyClient.client(), times(4))
-                .describeClusters(any(DescribeClustersRequest.class));
-
+            .describeClusters(any(DescribeClustersRequest.class));
     }
 
     @Test
@@ -204,43 +239,43 @@ public class CreateHandlerTest extends AbstractTestBase {
         requestModel.setMultiAZ(true);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(requestModel)
-                .region(AWS_REGION)
-                .logicalResourceIdentifier("logicalId")
-                .clientRequestToken("token")
-                .build();
+            .desiredResourceState(requestModel)
+            .region(AWS_REGION)
+            .logicalResourceIdentifier("logicalId")
+            .clientRequestToken("token")
+            .build();
 
         when(proxyClient.client().createCluster(any(CreateClusterRequest.class)))
-                .thenReturn(CreateClusterResponse.builder()
-                        .cluster(MULTIAZ_CLUSTER)
-                        .build());
+            .thenReturn(CreateClusterResponse.builder()
+                .cluster(MULTIAZ_CLUSTER)
+                .build());
 
         Cluster multiAZCluster = Cluster.builder()
-                .clusterIdentifier(CLUSTER_IDENTIFIER)
-                .masterUsername(MASTER_USERNAME)
-                .nodeType(NODETYPE)
-                .numberOfNodes(NUMBER_OF_NODES)
-                .clusterStatus("available")
-                .clusterAvailabilityStatus("Available")
-                .allowVersionUpgrade(true)
-                .automatedSnapshotRetentionPeriod(0)
-                .encrypted(true)
-                .multiAZ(MULTIAZ_ENABLED)
-                .enhancedVpcRouting(false)
-                .manualSnapshotRetentionPeriod(1)
-                .publiclyAccessible(false)
-                .clusterSecurityGroups(Collections.emptyList())
-                .iamRoles(Collections.emptyList())
-                .vpcSecurityGroups(Collections.emptyList())
-                .build();
+            .clusterIdentifier(CLUSTER_IDENTIFIER)
+            .masterUsername(MASTER_USERNAME)
+            .nodeType(NODETYPE)
+            .numberOfNodes(NUMBER_OF_NODES)
+            .clusterStatus("available")
+            .clusterAvailabilityStatus("Available")
+            .allowVersionUpgrade(true)
+            .automatedSnapshotRetentionPeriod(0)
+            .encrypted(true)
+            .multiAZ(MULTIAZ_ENABLED)
+            .enhancedVpcRouting(false)
+            .manualSnapshotRetentionPeriod(1)
+            .publiclyAccessible(false)
+            .clusterSecurityGroups(Collections.emptyList())
+            .iamRoles(Collections.emptyList())
+            .vpcSecurityGroups(Collections.emptyList())
+            .build();
 
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class)))
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(multiAZCluster)
-                        .build());
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(multiAZCluster)
+                .build());
 
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class)))
-                .thenReturn(DescribeLoggingStatusResponse.builder().loggingEnabled(false).build());
+            .thenReturn(DescribeLoggingStatusResponse.builder().loggingEnabled(false).build());
         when(proxyClient.client().getResourcePolicy(any(GetResourcePolicyRequest.class))).thenReturn(getEmptyResourcePolicyResponseSdk());
 
         ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -260,13 +295,13 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
         assertThat(response.getResourceModel().getClusterIdentifier()).
-                isEqualTo(request.getDesiredResourceState().getClusterIdentifier());
+            isEqualTo(request.getDesiredResourceState().getClusterIdentifier());
         assertThat(response.getResourceModel().getMultiAZ()).
-                isEqualTo(request.getDesiredResourceState().getMultiAZ());
+            isEqualTo(request.getDesiredResourceState().getMultiAZ());
 
         verify(proxyClient.client()).createCluster(any(CreateClusterRequest.class));
         verify(proxyClient.client(), times(3))
-                .describeClusters(any(DescribeClustersRequest.class));
+            .describeClusters(any(DescribeClustersRequest.class));
     }
 
     @Test
@@ -279,18 +314,18 @@ public class CreateHandlerTest extends AbstractTestBase {
         responseModel.setNamespaceResourcePolicy(Translator.convertStringToJson(NAMESPACE_POLICY, logger));
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(requestModel)
-                .region(AWS_REGION)
-                .logicalResourceIdentifier("logicalId")
-                .clientRequestToken("token")
-                .build();
+            .desiredResourceState(requestModel)
+            .region(AWS_REGION)
+            .logicalResourceIdentifier("logicalId")
+            .clientRequestToken("token")
+            .build();
 
         when(proxyClient.client().createCluster(any(CreateClusterRequest.class))).thenReturn(createClusterResponseSdk());
         when(proxyClient.client().putResourcePolicy(any(PutResourcePolicyRequest.class))).thenReturn(putResourcePolicyResponseSdk());
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class))).thenReturn(describeClustersResponseSdk());
         when(proxyClient.client().getResourcePolicy(any(GetResourcePolicyRequest.class))).thenReturn(getResourcePolicyResponseSdk());
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class)))
-                .thenReturn(DescribeLoggingStatusResponse.builder().loggingEnabled(false).build());
+            .thenReturn(DescribeLoggingStatusResponse.builder().loggingEnabled(false).build());
 
         ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
 
@@ -309,7 +344,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel()).isEqualTo(responseModel);
         verify(proxyClient.client()).createCluster(any(CreateClusterRequest.class));
         verify(proxyClient.client(), times(4))
-                .describeClusters(any(DescribeClustersRequest.class));
+            .describeClusters(any(DescribeClustersRequest.class));
     }
 
     @Test
@@ -326,18 +361,18 @@ public class CreateHandlerTest extends AbstractTestBase {
         responseModel.setDeferMaintenanceStartTime(DEFER_MAINTENANCE_START_TIME);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(requestModel)
-                .region(AWS_REGION)
-                .logicalResourceIdentifier("logicalId")
-                .clientRequestToken("token")
-                .build();
+            .desiredResourceState(requestModel)
+            .region(AWS_REGION)
+            .logicalResourceIdentifier("logicalId")
+            .clientRequestToken("token")
+            .build();
 
         when(proxyClient.client().createCluster(any(CreateClusterRequest.class))).thenReturn(createClusterResponseSdk());
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class))).thenReturn(describeClustersResponseWithDeferMaintenanceSdk());
         when(proxyClient.client().getResourcePolicy(any(GetResourcePolicyRequest.class))).thenReturn(getEmptyResourcePolicyResponseSdk());
         when(proxyClient.client().modifyClusterMaintenance(any(ModifyClusterMaintenanceRequest.class))).thenReturn(getModifyClusterMaintenanceResponseSdk());
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class)))
-                .thenReturn(DescribeLoggingStatusResponse.builder().loggingEnabled(false).build());
+            .thenReturn(DescribeLoggingStatusResponse.builder().loggingEnabled(false).build());
 
         ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
 
@@ -356,7 +391,7 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel()).isEqualTo(responseModel);
         verify(proxyClient.client()).createCluster(any(CreateClusterRequest.class));
         verify(proxyClient.client(), times(4))
-                .describeClusters(any(DescribeClustersRequest.class));
+            .describeClusters(any(DescribeClustersRequest.class));
     }
 
     @Test
@@ -367,22 +402,22 @@ public class CreateHandlerTest extends AbstractTestBase {
         requestModel.setMasterPasswordSecretKmsKeyId(MASTER_PASSWORD_SECRET_KMS_KEY_ID);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(requestModel)
-                .region(AWS_REGION)
-                .logicalResourceIdentifier("logicalId")
-                .clientRequestToken("token")
-                .build();
+            .desiredResourceState(requestModel)
+            .region(AWS_REGION)
+            .logicalResourceIdentifier("logicalId")
+            .clientRequestToken("token")
+            .build();
 
         when(proxyClient.client().createCluster(any(CreateClusterRequest.class)))
-                .thenReturn(CreateClusterResponse.builder()
-                        .cluster(MANAGED_ADMIN_PASSWORD_CLUSTER)
-                        .build());
+            .thenReturn(CreateClusterResponse.builder()
+                .cluster(MANAGED_ADMIN_PASSWORD_CLUSTER)
+                .build());
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class)))
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(MANAGED_ADMIN_PASSWORD_CLUSTER)
-                        .build());
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(MANAGED_ADMIN_PASSWORD_CLUSTER)
+                .build());
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class)))
-                .thenReturn(DescribeLoggingStatusResponse.builder().loggingEnabled(false).build());
+            .thenReturn(DescribeLoggingStatusResponse.builder().loggingEnabled(false).build());
         when(proxyClient.client().getResourcePolicy(any(GetResourcePolicyRequest.class))).thenReturn(getEmptyResourcePolicyResponseSdk());
 
         ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -400,16 +435,16 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
         assertThat(response.getResourceModel().getClusterIdentifier()).
-                isEqualTo(request.getDesiredResourceState().getClusterIdentifier());
+            isEqualTo(request.getDesiredResourceState().getClusterIdentifier());
         assertThat(response.getResourceModel().getMasterPasswordSecretArn()).
-                isEqualTo(MASTER_PASSWORD_SECRET_ARN);
+            isEqualTo(MASTER_PASSWORD_SECRET_ARN);
         assertThat(response.getResourceModel().getMasterPasswordSecretKmsKeyId()).
-                isEqualTo(request.getDesiredResourceState().getMasterPasswordSecretKmsKeyId());
+            isEqualTo(request.getDesiredResourceState().getMasterPasswordSecretKmsKeyId());
         assertThat(response.getResourceModel().getMasterUserPassword()).isNull();
 
         verify(proxyClient.client()).createCluster(any(CreateClusterRequest.class));
         verify(proxyClient.client(), times(3))
-                .describeClusters(any(DescribeClustersRequest.class));
+            .describeClusters(any(DescribeClustersRequest.class));
     }
 
     @Test
@@ -420,21 +455,21 @@ public class CreateHandlerTest extends AbstractTestBase {
         requestModel.setMasterPasswordSecretKmsKeyId(MASTER_PASSWORD_SECRET_KMS_KEY_ID);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(requestModel)
-                .region(AWS_REGION)
-                .logicalResourceIdentifier("logicalId")
-                .clientRequestToken("token")
-                .build();
+            .desiredResourceState(requestModel)
+            .region(AWS_REGION)
+            .logicalResourceIdentifier("logicalId")
+            .clientRequestToken("token")
+            .build();
 
         when(proxyClient.client().restoreFromClusterSnapshot(any(RestoreFromClusterSnapshotRequest.class))).thenReturn(RestoreFromClusterSnapshotResponse.builder()
-                .cluster(MANAGED_ADMIN_PASSWORD_CLUSTER)
-                .build());
+            .cluster(MANAGED_ADMIN_PASSWORD_CLUSTER)
+            .build());
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class)))
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(MANAGED_ADMIN_PASSWORD_CLUSTER)
-                        .build());
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(MANAGED_ADMIN_PASSWORD_CLUSTER)
+                .build());
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class)))
-                .thenReturn(DescribeLoggingStatusResponse.builder().loggingEnabled(false).build());
+            .thenReturn(DescribeLoggingStatusResponse.builder().loggingEnabled(false).build());
         when(proxyClient.client().getResourcePolicy(any(GetResourcePolicyRequest.class))).thenReturn(getEmptyResourcePolicyResponseSdk());
 
         ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -452,16 +487,16 @@ public class CreateHandlerTest extends AbstractTestBase {
         assertThat(response.getMessage()).isNull();
         assertThat(response.getErrorCode()).isNull();
         assertThat(response.getResourceModel().getClusterIdentifier()).
-                isEqualTo(request.getDesiredResourceState().getClusterIdentifier());
+            isEqualTo(request.getDesiredResourceState().getClusterIdentifier());
         assertThat(response.getResourceModel().getMasterPasswordSecretArn()).
-                isEqualTo(MASTER_PASSWORD_SECRET_ARN);
+            isEqualTo(MASTER_PASSWORD_SECRET_ARN);
         assertThat(response.getResourceModel().getMasterPasswordSecretKmsKeyId()).
-                isEqualTo(request.getDesiredResourceState().getMasterPasswordSecretKmsKeyId());
+            isEqualTo(request.getDesiredResourceState().getMasterPasswordSecretKmsKeyId());
         assertThat(response.getResourceModel().getMasterUserPassword()).isNull();
 
         verify(proxyClient.client()).restoreFromClusterSnapshot(any(RestoreFromClusterSnapshotRequest.class));
         verify(proxyClient.client(), times(3))
-                .describeClusters(any(DescribeClustersRequest.class));
+            .describeClusters(any(DescribeClustersRequest.class));
     }
 
 }

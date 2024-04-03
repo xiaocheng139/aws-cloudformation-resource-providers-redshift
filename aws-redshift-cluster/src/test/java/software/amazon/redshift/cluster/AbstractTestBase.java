@@ -1,8 +1,11 @@
 package software.amazon.redshift.cluster;
 
+import com.google.common.collect.ImmutableList;
 import java.lang.UnsupportedOperationException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import software.amazon.awssdk.awscore.AwsRequest;
@@ -35,15 +38,18 @@ public class AbstractTestBase {
   protected static final String CLUSTER_NAMESPACE_ARN;
   protected static final String NAMESPACE_POLICY;
   protected static final String NAMESPACE_POLICY_EMPTY;
+  protected static final String LOG_DESTINATION_TYPE_CW;
   protected static final ResourcePolicy RESOURCE_POLICY;
   protected static final ResourcePolicy RESOURCE_POLICY_EMPTY;
-  protected static final LoggingProperties LOGGING_PROPERTIES;
+  protected static final LoggingProperties LOGGING_PROPERTIES_S3;
+  protected static final LoggingProperties LOGGING_PROPERTIES_CW;
   protected static final LoggingProperties LOGGING_PROPERTIES_DISABLED;
   protected static final software.amazon.awssdk.services.redshift.model.Tag TAG;
-  protected  static final Integer DEFER_MAINTENANCE_DURATION;
-  protected  static final String DEFER_MAINTENANCE_IDENTIFIER;
-  protected  static final String DEFER_MAINTENANCE_START_TIME;
-  protected  static final String DEFER_MAINTENANCE_END_TIME;
+  protected static final Integer DEFER_MAINTENANCE_DURATION;
+  protected static final String DEFER_MAINTENANCE_IDENTIFIER;
+  protected static final String DEFER_MAINTENANCE_START_TIME;
+  protected static final String DEFER_MAINTENANCE_END_TIME;
+  protected static final List<String> LOG_EXPORTS_TYPES;
 
   static {
     MOCK_CREDENTIALS = new Credentials("accessKey", "secretKey", "token");
@@ -67,36 +73,46 @@ public class AbstractTestBase {
     DEFER_MAINTENANCE_START_TIME = "2023-12-10T00:00:00Z";
     DEFER_MAINTENANCE_END_TIME = "2024-01-19T00:00:00Z";
     SNAPSHOT_IDENTIFIER = "redshift-cluster-1-snapshot";
+    LOG_DESTINATION_TYPE_CW = "cloudwatch";
+    LOG_EXPORTS_TYPES = ImmutableList.of("connectionlog", "useractivitylog", "userlog");
+
 
     RESOURCE_POLICY = ResourcePolicy.builder()
-            .resourceArn(CLUSTER_NAMESPACE_ARN)
-            .policy(NAMESPACE_POLICY)
-            .build();
+        .resourceArn(CLUSTER_NAMESPACE_ARN)
+        .policy(NAMESPACE_POLICY)
+        .build();
 
     RESOURCE_POLICY_EMPTY = ResourcePolicy.builder()
-            .resourceArn(CLUSTER_NAMESPACE_ARN)
-            .policy(null)
-            .build();
+        .resourceArn(CLUSTER_NAMESPACE_ARN)
+        .policy(null)
+        .build();
 
 
-    LOGGING_PROPERTIES = LoggingProperties.builder()
-            .bucketName(BUCKET_NAME)
-            .s3KeyPrefix("test")
-            .build();
+    LOGGING_PROPERTIES_S3 = LoggingProperties.builder()
+        .bucketName(BUCKET_NAME)
+        .s3KeyPrefix("test")
+        .build();
+
+    LOGGING_PROPERTIES_CW = LoggingProperties.builder()
+        .logDestinationType(LOG_DESTINATION_TYPE_CW)
+        .logExports(LOG_EXPORTS_TYPES)
+        .build();
 
     LOGGING_PROPERTIES_DISABLED = LoggingProperties.builder()
-            .bucketName(null)
-            .s3KeyPrefix(null)
-            .build();
+        .logDestinationType(null)
+        .logExports(new ArrayList<>())
+        .bucketName(null)
+        .s3KeyPrefix(null)
+        .build();
 
     TAG = software.amazon.awssdk.services.redshift.model.Tag.builder()
-            .key("foo")
-            .value("bar")
-            .build();
+        .key("foo")
+        .value("bar")
+        .build();
   }
   static ProxyClient<RedshiftClient> MOCK_PROXY(
-    final AmazonWebServicesClientProxy proxy,
-    final RedshiftClient sdkClient) {
+      final AmazonWebServicesClientProxy proxy,
+      final RedshiftClient sdkClient) {
     return new ProxyClient<RedshiftClient>() {
       @Override
       public <RequestT extends AwsRequest, ResponseT extends AwsResponse> ResponseT
@@ -139,105 +155,122 @@ public class AbstractTestBase {
 
   public static Cluster basicCluster(){
     return Cluster.builder()
-            .clusterStatus("available")
-            .clusterAvailabilityStatus("Available")
-            .clusterIdentifier(CLUSTER_IDENTIFIER)
-            .masterUsername(MASTER_USERNAME)
-            .nodeType(NODETYPE)
-            .numberOfNodes(NUMBER_OF_NODES)
-            .allowVersionUpgrade(true)
-            .encrypted(false)
-            .publiclyAccessible(false)
-            .enhancedVpcRouting(false)
-            .manualSnapshotRetentionPeriod(1)
-            .automatedSnapshotRetentionPeriod(0)
-            .clusterSecurityGroups(Collections.emptyList())
-            .iamRoles(Collections.emptyList())
-            .vpcSecurityGroups(Collections.emptyList())
-            .build();
+        .clusterStatus("available")
+        .clusterAvailabilityStatus("Available")
+        .clusterIdentifier(CLUSTER_IDENTIFIER)
+        .masterUsername(MASTER_USERNAME)
+        .nodeType(NODETYPE)
+        .numberOfNodes(NUMBER_OF_NODES)
+        .allowVersionUpgrade(true)
+        .encrypted(false)
+        .publiclyAccessible(false)
+        .enhancedVpcRouting(false)
+        .manualSnapshotRetentionPeriod(1)
+        .automatedSnapshotRetentionPeriod(0)
+        .clusterSecurityGroups(Collections.emptyList())
+        .iamRoles(Collections.emptyList())
+        .vpcSecurityGroups(Collections.emptyList())
+        .build();
   }
   public static Cluster responseCluster() {
     return basicCluster().toBuilder()
-            .clusterNamespaceArn(CLUSTER_NAMESPACE_ARN)
-            .build();
+        .clusterNamespaceArn(CLUSTER_NAMESPACE_ARN)
+        .build();
   }
 
   public static ResourceModel createClusterRequestModel() {
     return ResourceModel.builder()
-            .clusterIdentifier(CLUSTER_IDENTIFIER)
-            .masterUsername(MASTER_USERNAME)
-            .masterUserPassword(MASTER_USERPASSWORD)
-            .nodeType(NODETYPE)
-            .numberOfNodes(NUMBER_OF_NODES)
-            .clusterType("multi-node")
-            .allowVersionUpgrade(true)
-            .automatedSnapshotRetentionPeriod(0)
-            .encrypted(false)
-            .enhancedVpcRouting(false)
-            .manualSnapshotRetentionPeriod(1)
-            .publiclyAccessible(false)
-            .clusterSecurityGroups(Collections.emptyList())
-            .iamRoles(Collections.emptyList())
-            .vpcSecurityGroupIds(Collections.emptyList())
-            .tags(Collections.emptyList())
-            .build();
+        .clusterIdentifier(CLUSTER_IDENTIFIER)
+        .masterUsername(MASTER_USERNAME)
+        .masterUserPassword(MASTER_USERPASSWORD)
+        .nodeType(NODETYPE)
+        .numberOfNodes(NUMBER_OF_NODES)
+        .clusterType("multi-node")
+        .allowVersionUpgrade(true)
+        .automatedSnapshotRetentionPeriod(0)
+        .encrypted(false)
+        .enhancedVpcRouting(false)
+        .manualSnapshotRetentionPeriod(1)
+        .publiclyAccessible(false)
+        .clusterSecurityGroups(Collections.emptyList())
+        .iamRoles(Collections.emptyList())
+        .vpcSecurityGroupIds(Collections.emptyList())
+        .tags(Collections.emptyList())
+        .build();
   }
 
   public static ResourceModel restoreClusterRequestModel() {
     return createClusterRequestModel().toBuilder()
-            .snapshotIdentifier(SNAPSHOT_IDENTIFIER)
-            .build();
+        .snapshotIdentifier(SNAPSHOT_IDENTIFIER)
+        .build();
   }
 
   public static ResourceModel createClusterResponseModel() {
     return ResourceModel.builder()
-            .clusterIdentifier(CLUSTER_IDENTIFIER)
-            .clusterNamespaceArn(CLUSTER_NAMESPACE_ARN)
-            .masterUsername(MASTER_USERNAME)
-            .nodeType(NODETYPE)
-            .numberOfNodes(NUMBER_OF_NODES)
-            .clusterType("multi-node")
-            .allowVersionUpgrade(true)
-            .automatedSnapshotRetentionPeriod(0)
-            .encrypted(false)
-            .enhancedVpcRouting(false)
-            .manualSnapshotRetentionPeriod(1)
-            .publiclyAccessible(false)
-            .clusterSecurityGroups(Collections.emptyList())
-            .iamRoles(Collections.emptyList())
-            .vpcSecurityGroupIds(Collections.emptyList())
-            .tags(Collections.emptyList())
-            .build();
+        .clusterIdentifier(CLUSTER_IDENTIFIER)
+        .clusterNamespaceArn(CLUSTER_NAMESPACE_ARN)
+        .masterUsername(MASTER_USERNAME)
+        .nodeType(NODETYPE)
+        .numberOfNodes(NUMBER_OF_NODES)
+        .clusterType("multi-node")
+        .allowVersionUpgrade(true)
+        .automatedSnapshotRetentionPeriod(0)
+        .encrypted(false)
+        .enhancedVpcRouting(false)
+        .manualSnapshotRetentionPeriod(1)
+        .publiclyAccessible(false)
+        .clusterSecurityGroups(Collections.emptyList())
+        .iamRoles(Collections.emptyList())
+        .vpcSecurityGroupIds(Collections.emptyList())
+        .tags(Collections.emptyList())
+        .build();
   }
 
   public static CreateClusterResponse createClusterResponseSdk() {
     return CreateClusterResponse.builder()
-            .cluster(responseCluster())
-            .build();
+        .cluster(responseCluster())
+        .build();
+  }
+
+  public static EnableLoggingResponse createS3EnableLoggingResponseSdk() {
+    return EnableLoggingResponse.builder()
+        .bucketName(BUCKET_NAME)
+        .loggingEnabled(true)
+        .lastSuccessfulDeliveryTime(Instant.now())
+        .build();
+  }
+
+  public static EnableLoggingResponse createCWEnableLoggingResponseSdk() {
+    return EnableLoggingResponse.builder()
+        .logDestinationType(LOG_DESTINATION_TYPE_CW)
+        .logExports(LOG_EXPORTS_TYPES)
+        .loggingEnabled(true)
+        .lastSuccessfulDeliveryTime(Instant.now())
+        .build();
   }
 
   public static DescribeClustersResponse describeClustersResponseSdk() {
     return DescribeClustersResponse.builder()
-            .clusters(responseCluster())
-            .build();
+        .clusters(responseCluster())
+        .build();
   }
 
   public static DescribeLoggingStatusResponse describeLoggingStatusFalseResponseSdk() {
     return DescribeLoggingStatusResponse.builder()
-            .loggingEnabled(false)
-            .build();
+        .loggingEnabled(false)
+        .build();
   }
 
   public static PutResourcePolicyResponse putResourcePolicyResponseSdk() {
     return PutResourcePolicyResponse.builder()
-            .resourcePolicy(RESOURCE_POLICY)
-            .build();
+        .resourcePolicy(RESOURCE_POLICY)
+        .build();
   }
 
   public static GetResourcePolicyResponse getResourcePolicyResponseSdk() {
     return GetResourcePolicyResponse.builder()
-            .resourcePolicy(RESOURCE_POLICY)
-            .build();
+        .resourcePolicy(RESOURCE_POLICY)
+        .build();
   }
 
   public static DeleteResourcePolicyResponse deleteResourcePolicyResponseSdk() {
@@ -246,37 +279,37 @@ public class AbstractTestBase {
 
   public static PutResourcePolicyResponse putEmptyResourcePolicyResponseSdk() {
     return PutResourcePolicyResponse.builder()
-            .resourcePolicy(RESOURCE_POLICY_EMPTY)
-            .build();
+        .resourcePolicy(RESOURCE_POLICY_EMPTY)
+        .build();
   }
 
   public static GetResourcePolicyResponse getEmptyResourcePolicyResponseSdk() {
     return GetResourcePolicyResponse.builder()
-            .resourcePolicy(RESOURCE_POLICY_EMPTY)
-            .build();
+        .resourcePolicy(RESOURCE_POLICY_EMPTY)
+        .build();
   }
 
   public static DeferredMaintenanceWindow deferredMaintenanceWindow() {
     return DeferredMaintenanceWindow.builder()
-            .deferMaintenanceIdentifier(DEFER_MAINTENANCE_IDENTIFIER)
-            .deferMaintenanceStartTime(Instant.parse(DEFER_MAINTENANCE_START_TIME))
-            .deferMaintenanceEndTime(Instant.parse(DEFER_MAINTENANCE_END_TIME))
-            .build();
+        .deferMaintenanceIdentifier(DEFER_MAINTENANCE_IDENTIFIER)
+        .deferMaintenanceStartTime(Instant.parse(DEFER_MAINTENANCE_START_TIME))
+        .deferMaintenanceEndTime(Instant.parse(DEFER_MAINTENANCE_END_TIME))
+        .build();
   }
 
   public static ModifyClusterMaintenanceResponse getModifyClusterMaintenanceResponseSdk() {
     return ModifyClusterMaintenanceResponse.builder()
-            .cluster(responseCluster().toBuilder()
-                    .deferredMaintenanceWindows(deferredMaintenanceWindow())
-                    .build())
-            .build();
+        .cluster(responseCluster().toBuilder()
+            .deferredMaintenanceWindows(deferredMaintenanceWindow())
+            .build())
+        .build();
   }
 
   public static DescribeClustersResponse describeClustersResponseWithDeferMaintenanceSdk() {
     return DescribeClustersResponse.builder()
-            .clusters(responseCluster().toBuilder()
-                    .deferredMaintenanceWindows(deferredMaintenanceWindow())
-                    .build())
-            .build();
+        .clusters(responseCluster().toBuilder()
+            .deferredMaintenanceWindows(deferredMaintenanceWindow())
+            .build())
+        .build();
   }
 }

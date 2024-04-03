@@ -104,12 +104,12 @@ public class UpdateHandlerTest extends AbstractTestBase {
         updateModel.setNamespaceResourcePolicy(null);
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(updateModel)
-                .previousResourceState(previousModel)
-                .awsAccountId(AWS_ACCOUNT_ID)
-                .awsPartition(AWS_PARTITION)
-                .region(AWS_REGION)
-                .build();
+            .desiredResourceState(updateModel)
+            .previousResourceState(previousModel)
+            .awsAccountId(AWS_ACCOUNT_ID)
+            .awsPartition(AWS_PARTITION)
+            .region(AWS_REGION)
+            .build();
 
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class))).thenReturn(describeClustersResponseSdk());
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class))).thenReturn(describeLoggingStatusFalseResponseSdk());
@@ -136,27 +136,27 @@ public class UpdateHandlerTest extends AbstractTestBase {
         updateModel.setNamespaceResourcePolicy(Translator.convertStringToJson(NEW_NAMESPACE_RESOURCE_POLICY, logger));
 
         final ResourceHandlerRequest<ResourceModel> request = ResourceHandlerRequest.<ResourceModel>builder()
-                .desiredResourceState(updateModel)
-                .previousResourceState(previousModel)
-                .awsAccountId(AWS_ACCOUNT_ID)
-                .awsPartition(AWS_PARTITION)
-                .region(AWS_REGION)
-                .build();
+            .desiredResourceState(updateModel)
+            .previousResourceState(previousModel)
+            .awsAccountId(AWS_ACCOUNT_ID)
+            .awsPartition(AWS_PARTITION)
+            .region(AWS_REGION)
+            .build();
 
         ResourcePolicy newResourcePolicy = ResourcePolicy.builder()
-                .resourceArn(CLUSTER_NAMESPACE_ARN)
-                .policy(NEW_NAMESPACE_RESOURCE_POLICY)
-                .build();
+            .resourceArn(CLUSTER_NAMESPACE_ARN)
+            .policy(NEW_NAMESPACE_RESOURCE_POLICY)
+            .build();
 
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class))).thenReturn(describeClustersResponseSdk());
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class))).thenReturn(describeLoggingStatusFalseResponseSdk());
 
         when(proxyClient.client().putResourcePolicy(any(PutResourcePolicyRequest.class))).thenReturn(PutResourcePolicyResponse.builder()
-                .resourcePolicy(newResourcePolicy)
-                .build());
+            .resourcePolicy(newResourcePolicy)
+            .build());
         when(proxyClient.client().getResourcePolicy(any(GetResourcePolicyRequest.class))).thenReturn(GetResourcePolicyResponse.builder()
-                .resourcePolicy(newResourcePolicy)
-                .build());
+            .resourcePolicy(newResourcePolicy)
+            .build());
 
         final ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
 
@@ -174,110 +174,110 @@ public class UpdateHandlerTest extends AbstractTestBase {
     @Test
     public void testRemoveTags_RemoveIamRole_DisableLogging_ModifyNumOfNodes() {
         Tag tag = Tag.builder()
-                .key("foo")
-                .value("bar")
-                .build();
+            .key("foo")
+            .value("bar")
+            .build();
         Tag tagToRemove = Tag.builder()
-                .key("foo-remove")
-                .value("bar-remove")
-                .build();
+            .key("foo-remove")
+            .value("bar-remove")
+            .build();
         List<Tag> prevModelTags = Arrays.asList(tag, tagToRemove);
 
         final String roleToRemove = "arn:aws:iam::1111:role/cfn_migration_test_IAM_role_to_remove";
         List<String> prevModelIamRoles = Arrays.asList(IAM_ROLE_ARN, roleToRemove);
 
         LoggingProperties loggingProperties = LoggingProperties.builder()
-                .bucketName(BUCKET_NAME)
-                .s3KeyPrefix("test")
-                .build();
+            .logDestinationType(LOG_DESTINATION_TYPE_CW)
+            .logExports(LOG_EXPORTS_TYPES)
+            .build();
 
         List<Tag> newModelTags = Arrays.asList(tag);
         List<String> newModelIamRoles = Arrays.asList(IAM_ROLE_ARN);
 
         ResourceModel previousModel = BASIC_MODEL.toBuilder()
-                .nodeType("dc2.large")
-                .numberOfNodes(NUMBER_OF_NODES)
-                .iamRoles(prevModelIamRoles)
-                .tags(prevModelTags)
-                .loggingProperties(loggingProperties)
-                .build();
+            .nodeType("dc2.large")
+            .numberOfNodes(NUMBER_OF_NODES)
+            .iamRoles(prevModelIamRoles)
+            .tags(prevModelTags)
+            .loggingProperties(loggingProperties)
+            .build();
 
         ResourceModel updateModel = BASIC_MODEL.toBuilder()
-                .nodeType("dc2.large")
-                .numberOfNodes(NUMBER_OF_NODES * 2)
-                .iamRoles(newModelIamRoles)
-                .tags(newModelTags)
-                .loggingProperties(null)
-                .build();
+            .nodeType("dc2.large")
+            .numberOfNodes(NUMBER_OF_NODES * 2)
+            .iamRoles(newModelIamRoles)
+            .tags(newModelTags)
+            .loggingProperties(null)
+            .build();
 
         final ResourceHandlerRequest<ResourceModel> request = BASIC_RESOURCE_HANDLER_REQUEST.toBuilder()
-                .awsPartition("aws-us-gov")
-                .region("us-gov-west-1")
-                .desiredResourceState(updateModel)
-                .previousResourceState(previousModel)
-                .build();
+            .awsPartition("aws-us-gov")
+            .region("us-gov-west-1")
+            .desiredResourceState(updateModel)
+            .previousResourceState(previousModel)
+            .build();
 
         ClusterIamRole iamRole = ClusterIamRole
-                .builder()
-                .iamRoleArn(IAM_ROLE_ARN)
-                .applyStatus("in-sync")
-                .build();
+            .builder()
+            .iamRoleArn(IAM_ROLE_ARN)
+            .applyStatus("in-sync")
+            .build();
 
         ClusterIamRole iamRoleRemove = ClusterIamRole
-                .builder()
-                .iamRoleArn(roleToRemove)
-                .applyStatus("in-sync")
-                .build();
+            .builder()
+            .iamRoleArn(roleToRemove)
+            .applyStatus("in-sync")
+            .build();
 
         Cluster existingCluster = BASIC_CLUSTER.toBuilder()
-                .numberOfNodes(NUMBER_OF_NODES)
-                .iamRoles(iamRole, iamRoleRemove)
-                .tags(software.amazon.awssdk.services.redshift.model.Tag.builder().key("foo").value("bar").build(),
-                        software.amazon.awssdk.services.redshift.model.Tag.builder().key("foo-remove").value("bar-remove").build())
-                .build();
+            .numberOfNodes(NUMBER_OF_NODES)
+            .iamRoles(iamRole, iamRoleRemove)
+            .tags(software.amazon.awssdk.services.redshift.model.Tag.builder().key("foo").value("bar").build(),
+                software.amazon.awssdk.services.redshift.model.Tag.builder().key("foo-remove").value("bar-remove").build())
+            .build();
 
         Cluster modifiedCluster_tagRemoved_iamRoleRemoved_loggingDisabled = BASIC_CLUSTER.toBuilder()
-                .numberOfNodes(NUMBER_OF_NODES)
-                .iamRoles(iamRole)
-                .tags(software.amazon.awssdk.services.redshift.model.Tag.builder().key("foo").value("bar").build())
-                .build();
+            .numberOfNodes(NUMBER_OF_NODES)
+            .iamRoles(iamRole)
+            .tags(software.amazon.awssdk.services.redshift.model.Tag.builder().key("foo").value("bar").build())
+            .build();
 
         Cluster modifiedCluster_tagRemoved_iamRoleRemoved_loggingDisabled_ModifyNumberOfNodes = BASIC_CLUSTER.toBuilder()
-                .numberOfNodes(NUMBER_OF_NODES*2)
-                .iamRoles(iamRole)
-                .tags(software.amazon.awssdk.services.redshift.model.Tag.builder().key("foo").value("bar").build())
-                .build();
+            .numberOfNodes(NUMBER_OF_NODES*2)
+            .iamRoles(iamRole)
+            .tags(software.amazon.awssdk.services.redshift.model.Tag.builder().key("foo").value("bar").build())
+            .build();
 
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class)))
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(existingCluster)
-                        .build())
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(modifiedCluster_tagRemoved_iamRoleRemoved_loggingDisabled)
-                        .build())
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(modifiedCluster_tagRemoved_iamRoleRemoved_loggingDisabled_ModifyNumberOfNodes)
-                        .build());
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(existingCluster)
+                .build())
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(modifiedCluster_tagRemoved_iamRoleRemoved_loggingDisabled)
+                .build())
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(modifiedCluster_tagRemoved_iamRoleRemoved_loggingDisabled_ModifyNumberOfNodes)
+                .build());
 
         when(proxyClient.client().deleteTags(any(DeleteTagsRequest.class)))
-                .thenReturn(DeleteTagsResponse.builder().build());
+            .thenReturn(DeleteTagsResponse.builder().build());
 
         when(proxyClient.client().modifyClusterIamRoles(any(ModifyClusterIamRolesRequest.class)))
-                .thenReturn(ModifyClusterIamRolesResponse.builder()
-                        .cluster(modifiedCluster_tagRemoved_iamRoleRemoved_loggingDisabled)
-                        .build());
+            .thenReturn(ModifyClusterIamRolesResponse.builder()
+                .cluster(modifiedCluster_tagRemoved_iamRoleRemoved_loggingDisabled)
+                .build());
 
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class)))
-                .thenReturn(DescribeLoggingStatusResponse.builder().loggingEnabled(true).build())
-                .thenReturn(DescribeLoggingStatusResponse.builder().loggingEnabled(false).build());
+            .thenReturn(DescribeLoggingStatusResponse.builder().loggingEnabled(true).build())
+            .thenReturn(DescribeLoggingStatusResponse.builder().loggingEnabled(false).build());
 
         when(proxyClient.client().disableLogging(any(DisableLoggingRequest.class)))
-                .thenReturn(DisableLoggingResponse.builder().build());
+            .thenReturn(DisableLoggingResponse.builder().build());
 
         when(proxyClient.client().resizeCluster(any(ResizeClusterRequest.class)))
-                .thenReturn(ResizeClusterResponse.builder()
-                        .cluster(modifiedCluster_tagRemoved_iamRoleRemoved_loggingDisabled_ModifyNumberOfNodes)
-                        .build());
+            .thenReturn(ResizeClusterResponse.builder()
+                .cluster(modifiedCluster_tagRemoved_iamRoleRemoved_loggingDisabled_ModifyNumberOfNodes)
+                .build());
         when(proxyClient.client().getResourcePolicy(any(GetResourcePolicyRequest.class))).thenReturn(getEmptyResourcePolicyResponseSdk());
 
 
@@ -303,6 +303,8 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response.getResourceModel().getIamRoles()).isEqualTo(request.getDesiredResourceState().getIamRoles());
         assertThat(response.getResourceModel().getLoggingProperties().getBucketName()).isNull();
         assertThat(response.getResourceModel().getLoggingProperties().getS3KeyPrefix()).isNull();
+        assertThat(response.getResourceModel().getLoggingProperties().getLogDestinationType()).isNull();
+        assertThat(response.getResourceModel().getLoggingProperties().getLogExports()).isNullOrEmpty();
         assertThat(response.getResourceModel().getNumberOfNodes()).isEqualTo(previousModel.getNumberOfNodes()*2);
 
         assertThat(response.getResourceModels()).isNull();
@@ -316,98 +318,98 @@ public class UpdateHandlerTest extends AbstractTestBase {
         List<String> prevModelIamRoles = Arrays.asList(IAM_ROLE_ARN);
 
         ResourceModel previousModel = BASIC_MODEL.toBuilder()
-                .nodeType("dc2.large")
-                .iamRoles(prevModelIamRoles)
-                .tags(prevTags)
-                .loggingProperties(null)
-                .build();
+            .nodeType("dc2.large")
+            .iamRoles(prevModelIamRoles)
+            .tags(prevTags)
+            .loggingProperties(null)
+            .build();
 
         Tag tag = Tag.builder()
-                .key("foo")
-                .value("bar")
-                .build();
+            .key("foo")
+            .value("bar")
+            .build();
         Tag tagToAdd = Tag.builder()
-                .key("foo-add")
-                .value("bar-add")
-                .build();
+            .key("foo-add")
+            .value("bar-add")
+            .build();
         List<Tag> newModelTags = Arrays.asList(tag, tagToAdd);
 
         final String roleToAdd = "arn:aws:iam::1111:role/cfn_migration_test_IAM_role_to_add";
         List<String> newModelIamRoles = Arrays.asList(IAM_ROLE_ARN, roleToAdd);
 
         LoggingProperties loggingProperties = LoggingProperties.builder()
-                .bucketName(BUCKET_NAME)
-                .s3KeyPrefix("test/")
-                .build();
+            .logDestinationType(LOG_DESTINATION_TYPE_CW)
+            .logExports(LOG_EXPORTS_TYPES)
+            .build();
 
         ResourceModel updateModel = BASIC_MODEL.toBuilder()
-                .iamRoles(newModelIamRoles)
-                .tags(newModelTags)
-                .loggingProperties(loggingProperties)
-                .build();
+            .iamRoles(newModelIamRoles)
+            .tags(newModelTags)
+            .loggingProperties(loggingProperties)
+            .build();
 
         final ResourceHandlerRequest<ResourceModel> request = BASIC_RESOURCE_HANDLER_REQUEST.toBuilder()
-                .desiredResourceState(updateModel)
-                .previousResourceState(previousModel)
-                .build();
+            .desiredResourceState(updateModel)
+            .previousResourceState(previousModel)
+            .build();
 
         ClusterIamRole iamRole = ClusterIamRole
-                .builder()
-                .iamRoleArn(IAM_ROLE_ARN)
-                .applyStatus("in-sync")
-                .build();
+            .builder()
+            .iamRoleArn(IAM_ROLE_ARN)
+            .applyStatus("in-sync")
+            .build();
         ClusterIamRole iamRole_add = ClusterIamRole
-                .builder()
-                .iamRoleArn(roleToAdd)
-                .applyStatus("in-sync")
-                .build();
+            .builder()
+            .iamRoleArn(roleToAdd)
+            .applyStatus("in-sync")
+            .build();
 
         Cluster existingCluster = BASIC_CLUSTER.toBuilder()
-                .nodeType("dc2.large")
-                .iamRoles(iamRole)
-                .build();
+            .nodeType("dc2.large")
+            .iamRoles(iamRole)
+            .build();
 
         Cluster modifiedCluster_tagAdded_iamRoleAdded = BASIC_CLUSTER.toBuilder()
-                .iamRoles(iamRole, iamRole_add)
-                .tags(software.amazon.awssdk.services.redshift.model.Tag.builder().key("foo").value("bar").build(),
-                        software.amazon.awssdk.services.redshift.model.Tag.builder().key("foo-add").value("bar-add").build())
-                .build();
+            .iamRoles(iamRole, iamRole_add)
+            .tags(software.amazon.awssdk.services.redshift.model.Tag.builder().key("foo").value("bar").build(),
+                software.amazon.awssdk.services.redshift.model.Tag.builder().key("foo-add").value("bar-add").build())
+            .build();
 
         Cluster modifiedCluster_tagAdded_iamRoleAdded_loggingEnabled_NodeTypeModify = BASIC_CLUSTER.toBuilder()
-                .iamRoles(iamRole, iamRole_add)
-                .tags(software.amazon.awssdk.services.redshift.model.Tag.builder().key("foo").value("bar").build(),
-                        software.amazon.awssdk.services.redshift.model.Tag.builder().key("foo-add").value("bar-add").build())
-                .build();
+            .iamRoles(iamRole, iamRole_add)
+            .tags(software.amazon.awssdk.services.redshift.model.Tag.builder().key("foo").value("bar").build(),
+                software.amazon.awssdk.services.redshift.model.Tag.builder().key("foo-add").value("bar-add").build())
+            .build();
 
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class)))
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(existingCluster)
-                        .build())
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(modifiedCluster_tagAdded_iamRoleAdded)
-                        .build())
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(modifiedCluster_tagAdded_iamRoleAdded_loggingEnabled_NodeTypeModify)
-                        .build());
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(existingCluster)
+                .build())
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(modifiedCluster_tagAdded_iamRoleAdded)
+                .build())
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(modifiedCluster_tagAdded_iamRoleAdded_loggingEnabled_NodeTypeModify)
+                .build());
 
         when(proxyClient.client().createTags(any(CreateTagsRequest.class)))
-                .thenReturn(CreateTagsResponse.builder().build());
+            .thenReturn(CreateTagsResponse.builder().build());
 
         when(proxyClient.client().deleteTags(any(DeleteTagsRequest.class)))
-                .thenReturn(DeleteTagsResponse.builder().build());
+            .thenReturn(DeleteTagsResponse.builder().build());
 
         when(proxyClient.client().modifyClusterIamRoles(any(ModifyClusterIamRolesRequest.class)))
-                .thenReturn(ModifyClusterIamRolesResponse.builder()
-                        .cluster(modifiedCluster_tagAdded_iamRoleAdded)
-                        .build());
+            .thenReturn(ModifyClusterIamRolesResponse.builder()
+                .cluster(modifiedCluster_tagAdded_iamRoleAdded)
+                .build());
 
         when(proxyClient.client().enableLogging(any(EnableLoggingRequest.class)))
-                .thenReturn(EnableLoggingResponse.builder().loggingEnabled(true).bucketName(BUCKET_NAME).s3KeyPrefix("test/").build());
+            .thenReturn(EnableLoggingResponse.builder().loggingEnabled(true).bucketName(BUCKET_NAME).s3KeyPrefix("test/").build());
 
         when(proxyClient.client().resizeCluster(any(ResizeClusterRequest.class)))
-                .thenReturn(ResizeClusterResponse.builder()
-                        .cluster(modifiedCluster_tagAdded_iamRoleAdded_loggingEnabled_NodeTypeModify)
-                        .build());
+            .thenReturn(ResizeClusterResponse.builder()
+                .cluster(modifiedCluster_tagAdded_iamRoleAdded_loggingEnabled_NodeTypeModify)
+                .build());
         when(proxyClient.client().getResourcePolicy(any(GetResourcePolicyRequest.class))).thenReturn(getEmptyResourcePolicyResponseSdk());
 
         ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -417,11 +419,12 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response.getCallbackDelaySeconds()).isEqualTo(30);
 
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class)))
-                .thenReturn(DescribeLoggingStatusResponse.builder()
-                        .loggingEnabled(true)
-                        .bucketName(BUCKET_NAME)
-                        .s3KeyPrefix("test/")
-                        .build());
+            .thenReturn(DescribeLoggingStatusResponse.builder()
+                .loggingEnabled(true)
+                .logDestinationType(LOG_DESTINATION_TYPE_CW)
+                .logExports(LOG_EXPORTS_TYPES)
+                .build());
+
         //call back
         response = handler.handleRequest(proxy, request, response.getCallbackContext(), proxyClient, logger);
 
@@ -444,32 +447,32 @@ public class UpdateHandlerTest extends AbstractTestBase {
         ResourceModel previousModel = BASIC_MODEL.toBuilder().build();
 
         ResourceModel updateModel = BASIC_MODEL.toBuilder()
-                .masterUserPassword("new"+MASTER_USERPASSWORD)
-                .build();
+            .masterUserPassword("new"+MASTER_USERPASSWORD)
+            .build();
 
         final ResourceHandlerRequest<ResourceModel> request = BASIC_RESOURCE_HANDLER_REQUEST.toBuilder()
-                .desiredResourceState(updateModel)
-                .previousResourceState(previousModel)
-                .build();
+            .desiredResourceState(updateModel)
+            .previousResourceState(previousModel)
+            .build();
 
         Cluster existingCluster = BASIC_CLUSTER.toBuilder().build();
         Cluster modifiedCluster = BASIC_CLUSTER.toBuilder().build();
 
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class)))
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(existingCluster)
-                        .build())
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(modifiedCluster)
-                        .build());
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(existingCluster)
+                .build())
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(modifiedCluster)
+                .build());
 
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class)))
-                .thenReturn(DescribeLoggingStatusResponse.builder().build());
+            .thenReturn(DescribeLoggingStatusResponse.builder().build());
 
         when(proxyClient.client().modifyCluster(any(ModifyClusterRequest.class)))
-                .thenReturn(ModifyClusterResponse.builder()
-                        .cluster(modifiedCluster)
-                        .build());
+            .thenReturn(ModifyClusterResponse.builder()
+                .cluster(modifiedCluster)
+                .build());
         when(proxyClient.client().getResourcePolicy(any(GetResourcePolicyRequest.class))).thenReturn(getEmptyResourcePolicyResponseSdk());
 
 
@@ -489,44 +492,44 @@ public class UpdateHandlerTest extends AbstractTestBase {
         verify(handler).sleep(10);
 
         List<String> sensitiveAttributes = Arrays
-                .stream(UpdateHandler.DetectableModifyClusterAttribute.values())
-                .filter(e -> e.isSensitiveField()) // Filter enums with true booleanValue
-                .map(UpdateHandler.DetectableModifyClusterAttribute::getStringValue) // Convert filtered enums to their stringValues
-                .collect(Collectors.toList());
+            .stream(UpdateHandler.DetectableModifyClusterAttribute.values())
+            .filter(e -> e.isSensitiveField()) // Filter enums with true booleanValue
+            .map(UpdateHandler.DetectableModifyClusterAttribute::getStringValue) // Convert filtered enums to their stringValues
+            .collect(Collectors.toList());
         List<String> insensitiveAttributes = Arrays
-                .stream(UpdateHandler.DetectableModifyClusterAttribute.values())
-                .filter(e -> !e.isSensitiveField()) // Filter enums with true booleanValue
-                .map(UpdateHandler.DetectableModifyClusterAttribute::getStringValue) // Convert filtered enums to their stringValues
-                .collect(Collectors.toList());
+            .stream(UpdateHandler.DetectableModifyClusterAttribute.values())
+            .filter(e -> !e.isSensitiveField()) // Filter enums with true booleanValue
+            .map(UpdateHandler.DetectableModifyClusterAttribute::getStringValue) // Convert filtered enums to their stringValues
+            .collect(Collectors.toList());
         assertThat(sensitiveAttributes.size()).isEqualTo(1);
         assertThat(insensitiveAttributes.size()).isEqualTo(21);
 
         assertThat(sensitiveAttributes.get(0)).isEqualTo("MasterUserPassword");
 
         List<String> insensitiveFileds = Arrays.asList(
-                "AllowVersionUpgrade",
-                "AutomatedSnapshotRetentionPeriod",
-                "AvailabilityZone",
-                "AvailabilityZoneRelocation",
-                "ClusterSecurityGroups",
-                "ClusterVersion",
-                "ElasticIp",
-                "Encrypted",
-                "EnhancedVpcRouting",
-                "HsmClientCertificateIdentifier",
-                "HsmConfigurationIdentifier",
-                "KmsKeyId",
-                "MaintenanceTrackName",
-                "ManualSnapshotRetentionPeriod",
-                "Port",
-                "PreferredMaintenanceWindow",
-                "PubliclyAccessible",
-                "VpcSecurityGroupIds"
+            "AllowVersionUpgrade",
+            "AutomatedSnapshotRetentionPeriod",
+            "AvailabilityZone",
+            "AvailabilityZoneRelocation",
+            "ClusterSecurityGroups",
+            "ClusterVersion",
+            "ElasticIp",
+            "Encrypted",
+            "EnhancedVpcRouting",
+            "HsmClientCertificateIdentifier",
+            "HsmConfigurationIdentifier",
+            "KmsKeyId",
+            "MaintenanceTrackName",
+            "ManualSnapshotRetentionPeriod",
+            "Port",
+            "PreferredMaintenanceWindow",
+            "PubliclyAccessible",
+            "VpcSecurityGroupIds"
         );
 
         for (int i = 0; i < insensitiveFileds.size(); i++) {
             assertThat(insensitiveAttributes.get(i)).isEqualTo(
-                    insensitiveFileds.get(i));
+                insensitiveFileds.get(i));
         }
     }
 
@@ -535,33 +538,33 @@ public class UpdateHandlerTest extends AbstractTestBase {
         ResourceModel previousModel = BASIC_MODEL.toBuilder().build();
 
         ResourceModel updateModel = BASIC_MODEL.toBuilder()
-                .encrypted(true)
-                .multiAZ(true)
-                .build();
+            .encrypted(true)
+            .multiAZ(true)
+            .build();
 
         final ResourceHandlerRequest<ResourceModel> request = BASIC_RESOURCE_HANDLER_REQUEST.toBuilder()
-                .desiredResourceState(updateModel)
-                .previousResourceState(previousModel)
-                .build();
+            .desiredResourceState(updateModel)
+            .previousResourceState(previousModel)
+            .build();
 
         Cluster existingCluster = BASIC_CLUSTER.toBuilder().build();
         Cluster modifiedCluster = MULTIAZ_CLUSTER.toBuilder().build();
 
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class)))
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(existingCluster)
-                        .build())
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(modifiedCluster)
-                        .build());
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(existingCluster)
+                .build())
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(modifiedCluster)
+                .build());
 
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class)))
-                .thenReturn(DescribeLoggingStatusResponse.builder().build());
+            .thenReturn(DescribeLoggingStatusResponse.builder().build());
 
         when(proxyClient.client().modifyCluster(any(ModifyClusterRequest.class)))
-                .thenReturn(ModifyClusterResponse.builder()
-                        .cluster(modifiedCluster)
-                        .build());
+            .thenReturn(ModifyClusterResponse.builder()
+                .cluster(modifiedCluster)
+                .build());
         when(proxyClient.client().getResourcePolicy(any(GetResourcePolicyRequest.class))).thenReturn(getEmptyResourcePolicyResponseSdk());
 
 
@@ -586,33 +589,33 @@ public class UpdateHandlerTest extends AbstractTestBase {
         ResourceModel previousModel = BASIC_MODEL.toBuilder().build();
 
         ResourceModel updateModel = BASIC_MODEL.toBuilder()
-                .manageMasterPassword(true)
-                .masterPasswordSecretKmsKeyId(MASTER_PASSWORD_SECRET_KMS_KEY_ID)
-                .build();
+            .manageMasterPassword(true)
+            .masterPasswordSecretKmsKeyId(MASTER_PASSWORD_SECRET_KMS_KEY_ID)
+            .build();
 
         final ResourceHandlerRequest<ResourceModel> request = BASIC_RESOURCE_HANDLER_REQUEST.toBuilder()
-                .desiredResourceState(updateModel)
-                .previousResourceState(previousModel)
-                .build();
+            .desiredResourceState(updateModel)
+            .previousResourceState(previousModel)
+            .build();
 
         Cluster existingCluster = BASIC_CLUSTER.toBuilder().build();
         Cluster modifiedCluster = MANAGED_ADMIN_PASSWORD_CLUSTER.toBuilder().build();
 
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class)))
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(existingCluster)
-                        .build())
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(modifiedCluster)
-                        .build());
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(existingCluster)
+                .build())
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(modifiedCluster)
+                .build());
 
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class)))
-                .thenReturn(DescribeLoggingStatusResponse.builder().build());
+            .thenReturn(DescribeLoggingStatusResponse.builder().build());
 
         when(proxyClient.client().modifyCluster(any(ModifyClusterRequest.class)))
-                .thenReturn(ModifyClusterResponse.builder()
-                        .cluster(modifiedCluster)
-                        .build());
+            .thenReturn(ModifyClusterResponse.builder()
+                .cluster(modifiedCluster)
+                .build());
         when(proxyClient.client().getResourcePolicy(any(GetResourcePolicyRequest.class))).thenReturn(getEmptyResourcePolicyResponseSdk());
 
         ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -627,48 +630,48 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
 
         assertThat(response.getResourceModel().getMasterPasswordSecretArn()).
-                isEqualTo(MASTER_PASSWORD_SECRET_ARN);
+            isEqualTo(MASTER_PASSWORD_SECRET_ARN);
         assertThat(response.getResourceModel().getMasterPasswordSecretKmsKeyId()).
-                isEqualTo(request.getDesiredResourceState().getMasterPasswordSecretKmsKeyId());
+            isEqualTo(request.getDesiredResourceState().getMasterPasswordSecretKmsKeyId());
         assertThat(response.getResourceModel().getMasterUserPassword()).isNull();
 
 
         verify(proxyClient.client()).modifyCluster(any(ModifyClusterRequest.class));
-     }
+    }
 
     @Test
     public void testModify_OptOutManagedMasterPassword() {
         ResourceModel previousModel = BASIC_MODEL.toBuilder()
-                .masterUserPassword(null)
-                .manageMasterPassword(true)
-                .masterPasswordSecretKmsKeyId(MASTER_PASSWORD_SECRET_KMS_KEY_ID)
-                .build();
+            .masterUserPassword(null)
+            .manageMasterPassword(true)
+            .masterPasswordSecretKmsKeyId(MASTER_PASSWORD_SECRET_KMS_KEY_ID)
+            .build();
 
         ResourceModel updateModel = BASIC_MODEL.toBuilder().build();
 
         final ResourceHandlerRequest<ResourceModel> request = BASIC_RESOURCE_HANDLER_REQUEST.toBuilder()
-                .desiredResourceState(updateModel)
-                .previousResourceState(previousModel)
-                .build();
+            .desiredResourceState(updateModel)
+            .previousResourceState(previousModel)
+            .build();
 
         Cluster existingCluster = MANAGED_ADMIN_PASSWORD_CLUSTER.toBuilder().build();
         Cluster modifiedCluster = BASIC_CLUSTER.toBuilder().build();
 
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class)))
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(existingCluster)
-                        .build())
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(modifiedCluster)
-                        .build());
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(existingCluster)
+                .build())
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(modifiedCluster)
+                .build());
 
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class)))
-                .thenReturn(DescribeLoggingStatusResponse.builder().build());
+            .thenReturn(DescribeLoggingStatusResponse.builder().build());
 
         when(proxyClient.client().modifyCluster(any(ModifyClusterRequest.class)))
-                .thenReturn(ModifyClusterResponse.builder()
-                        .cluster(modifiedCluster)
-                        .build());
+            .thenReturn(ModifyClusterResponse.builder()
+                .cluster(modifiedCluster)
+                .build());
         when(proxyClient.client().getResourcePolicy(any(GetResourcePolicyRequest.class))).thenReturn(getEmptyResourcePolicyResponseSdk());
 
         ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -691,39 +694,39 @@ public class UpdateHandlerTest extends AbstractTestBase {
     @Test
     public void testModify_UpdateMasterPasswordSecretKmsKeyId() {
         ResourceModel previousModel = BASIC_MODEL.toBuilder()
-                .manageMasterPassword(true)
-                .masterPasswordSecretKmsKeyId(MASTER_PASSWORD_SECRET_KMS_KEY_ID)
-                .build();
+            .manageMasterPassword(true)
+            .masterPasswordSecretKmsKeyId(MASTER_PASSWORD_SECRET_KMS_KEY_ID)
+            .build();
 
         String newMasterPasswordSecretKmsKeyId = MASTER_PASSWORD_SECRET_KMS_KEY_ID + "2";
         ResourceModel updateModel = BASIC_MODEL.toBuilder()
-                .manageMasterPassword(true)
-                .masterPasswordSecretKmsKeyId(newMasterPasswordSecretKmsKeyId)
-                .build();
+            .manageMasterPassword(true)
+            .masterPasswordSecretKmsKeyId(newMasterPasswordSecretKmsKeyId)
+            .build();
 
         final ResourceHandlerRequest<ResourceModel> request = BASIC_RESOURCE_HANDLER_REQUEST.toBuilder()
-                .desiredResourceState(updateModel)
-                .previousResourceState(previousModel)
-                .build();
+            .desiredResourceState(updateModel)
+            .previousResourceState(previousModel)
+            .build();
 
         Cluster existingCluster = MANAGED_ADMIN_PASSWORD_CLUSTER.toBuilder().build();
         Cluster modifiedCluster = MANAGED_ADMIN_PASSWORD_CLUSTER.toBuilder().masterPasswordSecretKmsKeyId(newMasterPasswordSecretKmsKeyId).build();
 
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class)))
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(existingCluster)
-                        .build())
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(modifiedCluster)
-                        .build());
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(existingCluster)
+                .build())
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(modifiedCluster)
+                .build());
 
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class)))
-                .thenReturn(DescribeLoggingStatusResponse.builder().build());
+            .thenReturn(DescribeLoggingStatusResponse.builder().build());
 
         when(proxyClient.client().modifyCluster(any(ModifyClusterRequest.class)))
-                .thenReturn(ModifyClusterResponse.builder()
-                        .cluster(modifiedCluster)
-                        .build());
+            .thenReturn(ModifyClusterResponse.builder()
+                .cluster(modifiedCluster)
+                .build());
         when(proxyClient.client().getResourcePolicy(any(GetResourcePolicyRequest.class))).thenReturn(getEmptyResourcePolicyResponseSdk());
 
         ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -738,9 +741,9 @@ public class UpdateHandlerTest extends AbstractTestBase {
         assertThat(response.getStatus()).isEqualTo(OperationStatus.SUCCESS);
 
         assertThat(response.getResourceModel().getMasterPasswordSecretArn()).
-                isEqualTo(MASTER_PASSWORD_SECRET_ARN);
+            isEqualTo(MASTER_PASSWORD_SECRET_ARN);
         assertThat(response.getResourceModel().getMasterPasswordSecretKmsKeyId()).
-                isEqualTo(request.getDesiredResourceState().getMasterPasswordSecretKmsKeyId());
+            isEqualTo(request.getDesiredResourceState().getMasterPasswordSecretKmsKeyId());
         assertThat(response.getResourceModel().getMasterUserPassword()).isNull();
 
         verify(proxyClient.client()).modifyCluster(any(ModifyClusterRequest.class));
@@ -751,59 +754,59 @@ public class UpdateHandlerTest extends AbstractTestBase {
 
     private static Stream<Arguments> detectableModifyClusterAttributeTest() {
         return Stream.of(
-                Arguments.of("AllowVersionUpgrade", BOOLEAN_BEFORE, BOOLEAN_AFTER),
-                Arguments.of("AutomatedSnapshotRetentionPeriod", 10, 15),
-                Arguments.of("AvailabilityZone", "before-az", "after-az"),
-                Arguments.of("AvailabilityZoneRelocation", true, false),
-                // todo: mock this attribute properly
+            Arguments.of("AllowVersionUpgrade", BOOLEAN_BEFORE, BOOLEAN_AFTER),
+            Arguments.of("AutomatedSnapshotRetentionPeriod", 10, 15),
+            Arguments.of("AvailabilityZone", "before-az", "after-az"),
+            Arguments.of("AvailabilityZoneRelocation", true, false),
+            // todo: mock this attribute properly
 //                Arguments.of("ClusterSecurityGroups",
 //                        Arrays.asList(ClusterSecurityGroupMembership.builder().clusterSecurityGroupName("before-sg").build().toString()),
 //                        Arrays.asList(ClusterSecurityGroupMembership.builder().clusterSecurityGroupName("after-sg").build().toString())
 //                ),
-                Arguments.of("ClusterVersion", "before-cv", "after-cv"),
-                Arguments.of("ElasticIp", "before-eip", "after-eip"),
-                Arguments.of("Encrypted", BOOLEAN_BEFORE, BOOLEAN_AFTER),
-                Arguments.of("EnhancedVpcRouting", BOOLEAN_BEFORE, BOOLEAN_AFTER),
-                Arguments.of("HsmClientCertificateIdentifier", "before-hsm-cert-id", "after-hsm-cert-id"),
-                Arguments.of("HsmConfigurationIdentifier", "before-hsm-config-id", "after-hsm-config-id"),
-                Arguments.of("KmsKeyId", "before-kms", "after-kms"),
-                Arguments.of("MaintenanceTrackName", "before-track", "after-track"),
-                Arguments.of("ManualSnapshotRetentionPeriod", 5, 15),
-                Arguments.of("MasterUserPassword", "before-password", "after-password"),
-                Arguments.of("Port", 100, 200),
-                Arguments.of("PreferredMaintenanceWindow", "before-window", "after-window"),
-                Arguments.of("PubliclyAccessible", BOOLEAN_BEFORE, BOOLEAN_AFTER),
-                Arguments.of("VpcSecurityGroupIds", Arrays.asList("before-sg-id"), Arrays.asList("after-sg-id")),
-                Arguments.of("ManageMasterPassword", BOOLEAN_BEFORE, BOOLEAN_AFTER),
-                Arguments.of("MasterPasswordSecretKmsKeyId", "before-kms", "after-kms")
+            Arguments.of("ClusterVersion", "before-cv", "after-cv"),
+            Arguments.of("ElasticIp", "before-eip", "after-eip"),
+            Arguments.of("Encrypted", BOOLEAN_BEFORE, BOOLEAN_AFTER),
+            Arguments.of("EnhancedVpcRouting", BOOLEAN_BEFORE, BOOLEAN_AFTER),
+            Arguments.of("HsmClientCertificateIdentifier", "before-hsm-cert-id", "after-hsm-cert-id"),
+            Arguments.of("HsmConfigurationIdentifier", "before-hsm-config-id", "after-hsm-config-id"),
+            Arguments.of("KmsKeyId", "before-kms", "after-kms"),
+            Arguments.of("MaintenanceTrackName", "before-track", "after-track"),
+            Arguments.of("ManualSnapshotRetentionPeriod", 5, 15),
+            Arguments.of("MasterUserPassword", "before-password", "after-password"),
+            Arguments.of("Port", 100, 200),
+            Arguments.of("PreferredMaintenanceWindow", "before-window", "after-window"),
+            Arguments.of("PubliclyAccessible", BOOLEAN_BEFORE, BOOLEAN_AFTER),
+            Arguments.of("VpcSecurityGroupIds", Arrays.asList("before-sg-id"), Arrays.asList("after-sg-id")),
+            Arguments.of("ManageMasterPassword", BOOLEAN_BEFORE, BOOLEAN_AFTER),
+            Arguments.of("MasterPasswordSecretKmsKeyId", "before-kms", "after-kms")
         );
     }
 
     @ParameterizedTest
     @MethodSource("detectableModifyClusterAttributeTest")
     public void testModifyClusterAttributes(
-            String modifyClusterAttribute,
-            Object beforeValue,
-            Object afterValue
+        String modifyClusterAttribute,
+        Object beforeValue,
+        Object afterValue
     ) throws Exception {
         if (modifyClusterAttribute.equals("ClusterSecurityGroups")) {
             return;
         }
         ResourceModel previousModel = BASIC_MODEL.toBuilder()
-                .availabilityZoneRelocation(BOOLEAN_BEFORE)
-                .masterUserPassword(MASTER_USERPASSWORD)
-                .allowVersionUpgrade(BOOLEAN_BEFORE)
-                .encrypted(BOOLEAN_BEFORE)
-                .enhancedVpcRouting(BOOLEAN_BEFORE)
-                .publiclyAccessible(BOOLEAN_BEFORE)
-                .build();
+            .availabilityZoneRelocation(BOOLEAN_BEFORE)
+            .masterUserPassword(MASTER_USERPASSWORD)
+            .allowVersionUpgrade(BOOLEAN_BEFORE)
+            .encrypted(BOOLEAN_BEFORE)
+            .enhancedVpcRouting(BOOLEAN_BEFORE)
+            .publiclyAccessible(BOOLEAN_BEFORE)
+            .build();
 
         Cluster existingCluster = BASIC_CLUSTER.toBuilder()
-                .allowVersionUpgrade(BOOLEAN_BEFORE)
-                .encrypted(BOOLEAN_BEFORE)
-                .enhancedVpcRouting(BOOLEAN_BEFORE)
-                .publiclyAccessible(BOOLEAN_BEFORE)
-                .build();
+            .allowVersionUpgrade(BOOLEAN_BEFORE)
+            .encrypted(BOOLEAN_BEFORE)
+            .enhancedVpcRouting(BOOLEAN_BEFORE)
+            .publiclyAccessible(BOOLEAN_BEFORE)
+            .build();
 
         String attributeName = Character.toLowerCase(modifyClusterAttribute.charAt(0)) + modifyClusterAttribute.substring(1);
 
@@ -817,25 +820,25 @@ public class UpdateHandlerTest extends AbstractTestBase {
         modifyAttribute(updateModel, ResourceModel.class, attributeName, afterValue);
 
         final ResourceHandlerRequest<ResourceModel> request = BASIC_RESOURCE_HANDLER_REQUEST.toBuilder()
-                .desiredResourceState(updateModel)
-                .previousResourceState(previousModel)
-                .build();
+            .desiredResourceState(updateModel)
+            .previousResourceState(previousModel)
+            .build();
 
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class)))
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(existingCluster)
-                        .build())
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(modifiedCluster)
-                        .build());
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(existingCluster)
+                .build())
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(modifiedCluster)
+                .build());
 
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class)))
-                .thenReturn(DescribeLoggingStatusResponse.builder().build());
+            .thenReturn(DescribeLoggingStatusResponse.builder().build());
 
         when(proxyClient.client().modifyCluster(any(ModifyClusterRequest.class)))
-                .thenReturn(ModifyClusterResponse.builder()
-                        .cluster(modifiedCluster)
-                        .build());
+            .thenReturn(ModifyClusterResponse.builder()
+                .cluster(modifiedCluster)
+                .build());
         when(proxyClient.client().getResourcePolicy(any(GetResourcePolicyRequest.class))).thenReturn(getEmptyResourcePolicyResponseSdk());
 
         ProgressEvent<ResourceModel, CallbackContext> response = handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
@@ -854,30 +857,30 @@ public class UpdateHandlerTest extends AbstractTestBase {
     private static String NO_TEST_FLAG = "no-test-flag";
     private static Stream<Arguments> maintenanceTrackTestData() {
         return Stream.of(
-                Arguments.of("before-track", "after-track", true, NO_TEST_FLAG),
-                Arguments.of(null, "after-track", true, NO_TEST_FLAG),
-                Arguments.of("before-track", null, true, NO_TEST_FLAG),
-                Arguments.of("current", null, false, NO_TEST_FLAG),
-                Arguments.of(null, "current", false, NO_TEST_FLAG),
-                Arguments.of("current", "current", false, NO_TEST_FLAG),
-                Arguments.of(null, null, false, NO_TEST_FLAG),
-                Arguments.of("before-track", "after-track", true, "after-track"),
-                Arguments.of(null, "after-track", true, "after-track"),
-                Arguments.of("before-track", null, true, "current"),
-                Arguments.of("current", null, false, null),
-                Arguments.of(null, "current", false, null),
-                Arguments.of("current", "current", false, null),
-                Arguments.of(null, null, false, null)
+            Arguments.of("before-track", "after-track", true, NO_TEST_FLAG),
+            Arguments.of(null, "after-track", true, NO_TEST_FLAG),
+            Arguments.of("before-track", null, true, NO_TEST_FLAG),
+            Arguments.of("current", null, false, NO_TEST_FLAG),
+            Arguments.of(null, "current", false, NO_TEST_FLAG),
+            Arguments.of("current", "current", false, NO_TEST_FLAG),
+            Arguments.of(null, null, false, NO_TEST_FLAG),
+            Arguments.of("before-track", "after-track", true, "after-track"),
+            Arguments.of(null, "after-track", true, "after-track"),
+            Arguments.of("before-track", null, true, "current"),
+            Arguments.of("current", null, false, null),
+            Arguments.of(null, "current", false, null),
+            Arguments.of("current", "current", false, null),
+            Arguments.of(null, null, false, null)
         );
     }
 
     @ParameterizedTest
     @MethodSource("maintenanceTrackTestData")
     public void testMaintenanceTrackModifyLogic(
-            String beforeTrack,
-            String afterTrack,
-            boolean shouldCallModifyCluster,
-            String expectedModifyTrackName
+        String beforeTrack,
+        String afterTrack,
+        boolean shouldCallModifyCluster,
+        String expectedModifyTrackName
     ) {
         ResourceModel previousModel = BASIC_MODEL.toBuilder().publiclyAccessible(true).maintenanceTrackName(beforeTrack).build();
         Cluster existingCluster = BASIC_CLUSTER.toBuilder().publiclyAccessible(true).maintenanceTrackName(beforeTrack).build();
@@ -885,32 +888,32 @@ public class UpdateHandlerTest extends AbstractTestBase {
         Cluster modifiedCluster;
         ResourceModel updateModel;
         if (Objects.equals(expectedModifyTrackName, NO_TEST_FLAG)) {
-             modifiedCluster = existingCluster.toBuilder().publiclyAccessible(true).maintenanceTrackName(afterTrack).build();
-             updateModel = previousModel.toBuilder().publiclyAccessible(true).maintenanceTrackName(afterTrack).build();
+            modifiedCluster = existingCluster.toBuilder().publiclyAccessible(true).maintenanceTrackName(afterTrack).build();
+            updateModel = previousModel.toBuilder().publiclyAccessible(true).maintenanceTrackName(afterTrack).build();
         } else {
             modifiedCluster = existingCluster.toBuilder().publiclyAccessible(false).maintenanceTrackName(afterTrack).build();
             updateModel = previousModel.toBuilder().publiclyAccessible(false).maintenanceTrackName(afterTrack).build();
         }
 
         final ResourceHandlerRequest<ResourceModel> request = BASIC_RESOURCE_HANDLER_REQUEST.toBuilder()
-                .desiredResourceState(updateModel)
-                .previousResourceState(previousModel)
-                .build();
+            .desiredResourceState(updateModel)
+            .previousResourceState(previousModel)
+            .build();
 
         when(proxyClient.client().describeClusters(any(DescribeClustersRequest.class)))
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(existingCluster)
-                        .build())
-                .thenReturn(DescribeClustersResponse.builder()
-                        .clusters(modifiedCluster)
-                        .build());
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(existingCluster)
+                .build())
+            .thenReturn(DescribeClustersResponse.builder()
+                .clusters(modifiedCluster)
+                .build());
 
         when(proxyClient.client().describeLoggingStatus(any(DescribeLoggingStatusRequest.class)))
-                .thenReturn(DescribeLoggingStatusResponse.builder().build());
+            .thenReturn(DescribeLoggingStatusResponse.builder().build());
         lenient().when(proxyClient.client().modifyCluster(any(ModifyClusterRequest.class)))
-                .thenReturn(ModifyClusterResponse.builder()
-                        .cluster(modifiedCluster)
-                        .build());
+            .thenReturn(ModifyClusterResponse.builder()
+                .cluster(modifiedCluster)
+                .build());
 
         handler.handleRequest(proxy, request, new CallbackContext(), proxyClient, logger);
 
